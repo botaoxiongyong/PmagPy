@@ -421,7 +421,7 @@ def main():
                 if 'location' in plot_data.columns:
                     locs = plot_data['location'].unique()
                     loc_string = "_".join(
-                        [loc.replace(' ', '_') for loc in locs])
+                        [str(loc).replace(' ', '_') for loc in locs])
                     filename += "_" + loc_string
                 filename += "_" + crd + "_" + key
                 filename += ".{}".format(fmt)
