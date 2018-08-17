@@ -457,7 +457,7 @@ def main():
             FIG = pmagplotlib.add_borders(FIG, titles, black, purple)
             pmagplotlib.save_plots(FIG, files)
 
-        if plt:
+        elif plt:
             pmagplotlib.save_plots(FIG, files)
             continue
         if verbose:
