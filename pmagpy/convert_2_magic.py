@@ -431,7 +431,7 @@ def agm(agm_file, dir_path=".", input_dir_path="",
         samp_infile="", site_infile="",
         specimen="", specnum=0, samp_con="1", location="unknown",
         instrument="", institution="", bak=False, syn=False, syntype="",
-        units="cgs", fmt='new'):
+        units="cgs", fmt='new', user=''):
     """
     Convert AGM format file to MagIC file(s)
 
@@ -485,6 +485,7 @@ def agm(agm_file, dir_path=".", input_dir_path="",
        units, default "cgs"
     fmt: str
         input format, options: ('new', 'old', 'xy', default 'new')
+    user : user name
 
     Returns
     ---------
@@ -635,6 +636,7 @@ def agm(agm_file, dir_path=".", input_dir_path="",
         else:
             SampRec["material_type"] = syntype
             MeasRec["specimen"] = specimen
+            MeasRec["user"] = user
             if specnum != 0:
                 sample = specimen[:specnum]
             else:
@@ -1067,19 +1069,22 @@ def cit(dir_path=".", input_dir_path="", magfile="", user="", meas_file="measure
     if not input_dir_path:
         input_dir_path = dir_path
     output_dir_path = dir_path
-    try:
-        DC_FIELD = float(labfield) * 1e-6
-        DC_PHI = float(phi)
-        DC_THETA = float(theta)
-    except ValueError:
-        raise ValueError(
-            'problem with your dc parameters. please provide a labfield in microTesla and a phi and theta in degrees.')
-    yn = ''
-    if DC_FIELD == 0 and DC_PHI == 0 and DC_THETA == 0:
-        print('-I- Required values for labfield, phi, and theta not provided!  Will try to get these interactively')
-        GET_DC_PARAMS = True
-    else:
-        GET_DC_PARAMS = False
+    DC_FIELD = float(labfield) * 1e-6
+    DC_PHI = float(phi)
+    DC_THETA = float(theta)
+    #try:
+    #    DC_FIELD = float(labfield) * 1e-6
+    #    DC_PHI = float(phi)
+    #    DC_THETA = float(theta)
+#    except ValueError:
+#        raise ValueError(
+#            'problem with your dc parameters. please provide a labfield in microTesla and a phi and theta in degrees.')
+#    yn = ''
+#    if DC_FIELD == 0 and DC_PHI == 0 and DC_THETA == 0:
+#        print('-I- Required values for labfield, phi, and theta not provided!  Will try to get these interactively')
+#        GET_DC_PARAMS = True
+#    else:
+#        GET_DC_PARAMS = False
     if locname == '' or locname == None:
         locname = 'unknown'
     if "4" in samp_con:
@@ -4642,7 +4647,7 @@ def k15(k15file, specnum=0, sample_naming_con='1', location="unknown",
 
     DESCRIPTION
         converts .k15 format data to magic_measurements  format.
-        assums Jelinek Kappabridge measurement scheme
+        assumes Jelinek Kappabridge measurement scheme
 
     SYNTAX
         k15_magic.py [-h] [command line options]
@@ -5154,7 +5159,6 @@ def kly4s(infile, specnum=0, locname="unknown", inst='SIO-KLY4S',
           input_dir_path='', data_model_num=3, samp_outfile='samples.txt',
           site_outfile='sites.txt'):
     """
-    def kly4s_magic(infile, specnum=0, locname="unknown", inst='SIO-KLY4S', samp_con="1", or_con='3' ,user='', measfile='magic_measurements.txt', aniso_outfile='rmag_anisotropy.txt', samp_infile='', spec_infile='', azdip_infile='', output_dir_path='.', input_dir_path=''):
 
     NAME
         kly4s_magic.py
@@ -5656,6 +5660,41 @@ def ldeo(magfile, output_dir_path=".", input_dir_path="",
          specnum=0, samp_con="1", location="unknown", codelist="",
          coil="", arm_labfield=50e-6, trm_peakT=873., peakfield=0,
          labfield=0, phi=0, theta=0, mass_or_vol="v", noave=0):
+    """
+    converts Lamont Doherty Earth Observatory measurement files to MagIC data base model 3.0
+
+    Parameters
+    _________
+    magfile : input measurement file
+    output_dir_path : output directory path
+    input_dir_path : input directory path
+    meas_file : output file measurement file name
+    spec_file : output file specimen file name
+    samp_file : output file sample file name
+    site_file : output file site file name
+    loc_file : output file location file name
+    codelist : colon delimited string of lab protocols (e.g., codelist="AF")
+        AF:  af demag
+        T: thermal including thellier but not trm acquisition
+        S: Shaw method
+        I: IRM (acquisition)
+        N: NRM only
+        TRM: trm acquisition
+        ANI: anisotropy experiment
+        D: double AF demag
+        G: triple AF demag (GRM protocol)
+    coil : 1,2, or 3 unist of IRM field in volts using ASC coil #1,2 or 3
+    arm_labfield : dc field for ARM in tesla
+    peakfield : peak af field for ARM
+    trm_peakT : peak temperature for TRM
+    labfield : lab field in tesla for TRM
+    phi, theta : direction of lab field
+    mass_or_vol : is the parameter in the file mass 'm' or volume 'v'
+    noave : boolean, if False, average replicates
+    Effects
+    _______
+    creates MagIC formatted tables
+    """
     # initialize some stuff
     dec = [315, 225, 180, 135, 45, 90, 270, 270, 270, 90, 180, 180, 0, 0, 0]
     inc = [0, 0, 0, 0, 0, -45, -45, 0, 45, 45, 45, -45, -90, -45, 45]
@@ -6778,9 +6817,11 @@ def mini(magfile, dir_path='.', meas_file='measurements.txt',
         methods_col = "method_codes"
         quality_col = "quality"
         meas_standard_col = "standard"
-        meas_name_col = "measurement"
+        meas_name_col = "experiment"
+        meas_seq_col = "sequence"
 
     # go through the measurements
+    seq=1
     for line in lines:
         rec = line.split(',')
         if len(rec) > 1:
@@ -6811,6 +6852,7 @@ def mini(magfile, dir_path='.', meas_file='measurements.txt',
             if demag == "T":
                 meas_type = "LT-T-Z"
                 MagRec[treat_dc_col] = '%8.3e' % (0)
+                MagRec[treat_ac_col] = '0'
                 MagRec[treat_temp_col] = '%8.3e' % (
                     float(treat)+273.)  # temp in kelvin
             if demag == "N":
@@ -6849,10 +6891,10 @@ def mini(magfile, dir_path='.', meas_file='measurements.txt',
 
 ### MsT_magic conversion
 
-def mst(infile, spec_name, dir_path=".", input_dir_path="",
+def mst(infile, spec_name='unknown', dir_path=".", input_dir_path="",
         meas_file="measurements.txt", samp_infile="samples.txt",
         user="", specnum=0, samp_con="1", labfield=0.5,
-        location='', syn=False, data_model_num=3):
+        location='unknown', syn=False, data_model_num=3):
 
     # deal with input files
     if not input_dir_path:
@@ -7209,8 +7251,78 @@ def sio(mag_file, dir_path=".", input_dir_path="",
         samp_infile="", institution="", syn=False, syntype="", instrument="",
         labfield=0, phi=0, theta=0, peakfield=0,
         specnum=0, samp_con='1', location="unknown", lat="", lon="",
-        noave=False, codelist="", coil="", cooling_rates="", timezone="UTC",
+        noave=False, codelist="", cooling_rates="", coil='', timezone="UTC",
         user=""):
+    """
+    converts Scripps Institution of Oceanography measurement files to MagIC data base model 3.0
+
+    Parameters
+    _________
+    magfile : input measurement file
+    dir_path : output directory path
+    input_dir_path : input directory path
+    meas_file : output file measurement file name
+    spec_file : output file specimen file name
+    samp_file : output file sample file name
+    site_file : output file site file name
+    loc_file : output file location file name
+    samp_infile : output file to append to
+    syn : if True, this is a synthetic specimen
+    syntype :  sample material type
+    instrument : instrument on which the measurements were made (e.g., "SIO-2G")
+    labfield : lab field in microtesla for TRM
+    phi, theta : direction of lab field [-1,-1 for anisotropy experiments]
+    peakfield : peak af field in mT for ARM
+    specnum : number of terminal characters distinguishing specimen from sample
+    samp_con :  sample/site naming convention
+            "1" XXXXY: where XXXX is an arbitr[ary length site designation and Y
+                is the single character sample designation.  e.g., TG001a is the
+                first sample from site TG001.    [default]
+            "2" XXXX-YY: YY sample from site XXXX (XXX, YY of arbitary length)
+            "3" XXXX.YY: YY sample from site XXXX (XXX, YY of arbitary length)
+            "4-Z" XXXX[YYY]:  YYY is sample designation with Z characters from site XXX
+            "5" site name same as sample
+            "6" site is entered under a separate column NOT CURRENTLY SUPPORTED
+            "7-Z" [XXXX]YYY:  XXXX is site designation with Z characters with sample name XXXXYYYY
+            NB: all others you will have to customize your self
+                 or e-mail ltauxe@ucsd.edu for help.
+
+            "8" synthetic - has no site name
+            "9" ODP naming convention
+    location : location name for study
+    lat : latitude of sites
+    lon : longitude of sites
+    noave : boolean, if False, average replicates
+    codelist : colon delimited string of lab protocols (e.g., codelist="AF")
+        AF:  af demag
+        T: thermal including thellier but not trm acquisition
+        S: Shaw method
+        I: IRM (acquisition)
+        N: NRM only
+        TRM: trm acquisition
+        ANI: anisotropy experiment
+        D: double AF demag
+        G: triple AF demag (GRM protocol)
+        CR: cooling rate experiment.
+            The treatment coding of the measurement file should be: XXX.00,XXX.10, XXX.20 ...XX.70 etc. (XXX.00 is optional)
+            where XXX in the temperature and .10,.20... are running numbers of the cooling rates steps.
+            XXX.00 is optional zerofield baseline. XXX.70 is alteration check.
+            syntax in sio_magic is: -LP CR xxx,yyy,zzz,..... xxx -A
+            where xxx, yyy, zzz...xxx  are cooling time in [K/minutes], seperated by comma, ordered at the same order as XXX.10,XXX.20 ...XX.70
+            if you use a zerofield step then no need to specify the cooling rate for the zerofield
+            It is important to add to the command line the -A option so the measurements will not be averaged.
+            But users need to make sure that there are no duplicate measurements in the file
+    cooling_rates :  cooling rate in K/sec for cooling rate dependence studies (K/minutes)
+            in comma separated list for each cooling rate (e.g., "43.6,1.3,43.6")
+    coil : 1,2, or 3 unist of IRM field in volts using ASC coil #1,2 or 3
+        the fast and slow experiments in comma separated string (e.g., fast:  43.6 K/min,  slow:  1.3 K/min)
+    timezone : timezone of date/time string in comment string
+    user : analyst
+
+    Effects
+    _______
+    creates MagIC formatted tables
+    """
 
     # initialize some stuff
     methcode = "LP-NO"
@@ -7242,7 +7354,7 @@ def sio(mag_file, dir_path=".", input_dir_path="",
     phi = float(phi)
     theta = float(theta)
     peakfield = float(peakfield) * 1e-3
-    specnum = -int(specnum)
+    specnum = int(specnum)
     samp_con = str(samp_con)
 
     # make sure all initial values are correctly set up (whether they come from the command line or a GUI)
@@ -7265,6 +7377,7 @@ def sio(mag_file, dir_path=".", input_dir_path="",
         print(__doc__)
         print("mag_file field is required option")
         return False, "mag_file field is required option"
+    print ('specnum: ',specnum)#DELETE ME
     if specnum != 0:
         specnum = -specnum
     if "4" == samp_con[0]:

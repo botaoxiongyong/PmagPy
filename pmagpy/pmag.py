@@ -345,11 +345,15 @@ def convert_lat(Recs):
     return New
 
 
-def convert_ages(Recs, **kwargs):
+def convert_ages(Recs, data_model=3):
     """
     converts ages to Ma
+    Parameters
+    _________
+    Recs : list of dictionaries in data model by data_model 
+    data_model : MagIC data model (default is 3) 
     """
-    if 'version' in list(kwargs.keys()) and kwargs['version'] == 3:
+    if data_model == 3:
         site_key = 'site'
         agekey = "age"
         keybase = ""
@@ -1727,7 +1731,18 @@ def open_file(infile, verbose=True):
 
 def magic_read(infile, data=None, return_keys=False, verbose=False):
     """
-    Reads  a Magic template file, puts data in a list of dictionaries.
+    Reads  a Magic template file, returns  data in a list of dictionaries.
+    
+    Parameters
+    ___________
+        Required: 
+            infile : the MagIC formatted tab delimited data file
+                first line contains 'tab' in the first column and the data file type in the second (e.g., measurements, specimen, sample, etc.)
+        Optional:
+            data : data read in with, e.g., file.readlines()  
+    Returns
+    _______
+        list of dictionaries, file type
     """
     if infile:
         if not os.path.exists(infile):
@@ -4545,10 +4560,9 @@ def b_vdm(B, lat):
     ----------
     V(A)DM in units of Am^2
     """
-    rad = old_div(np.pi, 180.)
     # changed radius of the earth from 3.367e6 3/12/2010
     fact = ((6.371e6)**3) * 1e7
-    colat = (90. - lat) * rad
+    colat = np.radians(90. - lat)
     return fact * B / (np.sqrt(1 + 3 * (np.cos(colat)**2)))
 
 
@@ -4945,7 +4959,7 @@ def doprinc(data):
     return ppars
 
 
-def PTrot(EP, Lats, Lons):
+def pt_rot(EP, Lats, Lons):
     """
     Rotates points on a globe by an Euler pole rotation using method of
     Cox and Hart 1986, box 7-3.
